@@ -92,6 +92,8 @@ function handleDrawOperationEvent() {
         drawVector(v2, "green");
     } else if (operation == "ang") {
         console.log("Angle:", angleBetween(v1, v2));
+    } else if (operation == "are") {
+        console.log("Area of the Triangle:", areaTriangle(v1, v2));
     }
 }
 
@@ -102,4 +104,10 @@ function angleBetween(v1, v2) {
     let mag = m1 * m2;
     let result = Math.acos(dot_product / mag);
     return result * (180 / Math.PI);
+}
+
+function areaTriangle(v1, v2) {
+    let cross = Vector3.cross(v1, v2);
+    let m = cross.magnitude();
+    return m * 0.5;
 }

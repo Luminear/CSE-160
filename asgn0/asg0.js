@@ -82,5 +82,13 @@ function handleDrawOperationEvent() {
         drawVector(v1, "green");
         v2.div(scalar);
         drawVector(v2, "green");
+    } else if (operation == "mag") {
+        console.log("Magnitude v1:", v1.magnitude());
+        console.log("Magnitude v2:",v2.magnitude());
+    } else if (operation == "nor") {
+        v1.normalize();
+        drawVector(v1, "green");
+        v2.normalize();
+        drawVector(v2, "green");
     }
 }

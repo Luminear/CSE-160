@@ -45,3 +45,42 @@ function handleDrawEvent() {
     drawVector(v1, "red");
     drawVector(v2, "blue");
 }
+
+function handleDrawOperationEvent() {
+    var canvas = document.getElementById('example');
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let operation = document.getElementById("operation").value;
+    let scalar = document.getElementById("scalar").value;
+
+    let v1x = document.getElementById("v1x").value;
+    let v1y = document.getElementById("v1y").value;
+    let v2x = document.getElementById("v2x").value;
+    let v2y = document.getElementById("v2y").value;
+
+    const v1 = new Vector3([v1x, v1y, 0]);
+    const v2 = new Vector3([v2x, v2y, 0]);
+    drawVector(v1, "red");
+    drawVector(v2, "blue");
+
+    if (operation == "add") {
+        v1.add(v2);
+        drawVector(v1, "green");
+    } else if (operation == "sub") {
+        v1.sub(v2);
+        drawVector(v1, "green");
+    } else if (operation == "mul") {
+        v1.mul(scalar);
+        drawVector(v1, "green");
+        v2.mul(scalar);
+        drawVector(v2, "green");
+    } else if (operation == "div") {
+        v1.div(scalar);
+        drawVector(v1, "green");
+        v2.div(scalar);
+        drawVector(v2, "green");
+    }
+}

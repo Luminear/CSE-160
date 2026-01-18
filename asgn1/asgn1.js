@@ -31,7 +31,7 @@ function main() {
 
   // Register function (event handler) to be called on a mouse press
   canvas.onmousedown = click;
-  canvas.onmousemove = function(ev) {if (ev.buttons == 1) {click(ev)}};
+  canvas.onmousemove = function (ev) { if (ev.buttons == 1) { click(ev) } };
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -40,13 +40,18 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
+const POINT = 0;
+const TRIANGLE = 1;
+
 let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
 let g_selectedSize = 5;
+let g_selectedShape = POINT;
 
 function actionsForHTMLUI() {
-  document.getElementById('green').onclick = function () { g_selectedColor = [0.0, 1.0, 0.0, 1.0]; };
-  document.getElementById('red').onclick = function () { g_selectedColor = [1.0, 0.0, 0.0, 1.0]; };
-  document.getElementById('clearButton').onclick = function () { g_shapesList = []; renderAllShapes();};
+  document.getElementById('pointButton').onclick = function () { g_selectedShape = POINT; };
+  document.getElementById('triangleButton').onclick = function () { g_selectedShape = TRIANGLE; };
+
+  document.getElementById('clearButton').onclick = function () { g_shapesList = []; renderAllShapes(); };
 
   document.getElementById('redSlide').addEventListener('mouseup', function () { g_selectedColor[0] = this.value / 100; });
   document.getElementById('greenSlide').addEventListener('mouseup', function () { g_selectedColor[1] = this.value / 100; });
@@ -65,25 +70,17 @@ function click(ev) {
 
   let [x, y] = convertCoordsToGL(ev);
 
-  // Store the coordinates to g_points array
-  // g_points.push([x, y]);
-  // g_colors.push(g_selectedColor.slice());
-  // g_sizes.push(g_selectedSize);
+  let point;
+  if (g_selectedShape == POINT) {
+    point = new Point();
+  } else {
+    point = new Triangle();
+  }
 
-  let point = new Point();
   point.position = [x, y];
   point.color = g_selectedColor.slice();
   point.size = g_selectedSize;
   g_shapesList.push(point);
-
-  // Store the coordinates to g_points array
-  // if (x >= 0.0 && y >= 0.0) {      // First quadrant
-  //   g_colors.push([1.0, 0.0, 0.0, 1.0]);  // Red
-  // } else if (x < 0.0 && y < 0.0) { // Third quadrant
-  //   g_colors.push([0.0, 1.0, 0.0, 1.0]);  // Green
-  // } else {                         // Others
-  //   g_colors.push([1.0, 1.0, 1.0, 1.0]);  // White
-  // }
 
   renderAllShapes();
 }
@@ -93,7 +90,7 @@ function setupWebGL() {
   canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  gl = canvas.getContext("webgl", {preserveDrawingBuffer: true});
+  gl = canvas.getContext("webgl", { preserveDrawingBuffer: true });
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;

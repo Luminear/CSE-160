@@ -36,6 +36,10 @@ function main() {
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
+  gl.enable(gl.BLEND);
+  // Set blending function
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
@@ -55,13 +59,15 @@ function actionsForHTMLUI() {
   document.getElementById('circleButton').onclick = function () { g_selectedShape = CIRCLE; };
 
   document.getElementById('clearButton').onclick = function () { g_shapesList = []; renderAllShapes(); };
+  document.getElementById('undoButton').onclick = function () { undo(); };
 
   document.getElementById('redSlide').addEventListener('mouseup', function () { g_selectedColor[0] = this.value / 100; });
   document.getElementById('greenSlide').addEventListener('mouseup', function () { g_selectedColor[1] = this.value / 100; });
   document.getElementById('blueSlide').addEventListener('mouseup', function () { g_selectedColor[2] = this.value / 100; });
+  document.getElementById('alphaSlide').addEventListener('mouseup', function () { g_selectedColor[3] = this.value / 100; });
 
   document.getElementById('sizeSlide').addEventListener('mouseup', function () { g_selectedSize = this.value; });
-  document.getElementById('segmentsSlide').addEventListener('mouseup', function () { g_selectedSegments = this.value; console.log(g_selectedSegments); });
+  document.getElementById('segmentsSlide').addEventListener('mouseup', function () { g_selectedSegments = this.value; });
 
   document.getElementById('copyButton').onclick = function () { copyPainting(); };
 }
@@ -153,12 +159,11 @@ function convertCoordsToGL(ev) {
 
   x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
   y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
-  console.log("x:", x, "y:", y);
   return ([x, y]);
 }
 
-let verts = [[-0.9, 0.6, -0.7, 0.6, -0.7, -0.6], [-0.9, -0.6, -0.9, 0.6, -0.7, -0.6], [-0.7, 0.6, -0.7, 0.5, -0.2, 0.5], 
-[-0.7, -0.6, -0.7, -0.5, -0.2, -0.5], [-0.2, 0.5, -0.2, 0, -0.1, 0], [-0.2, -0.5, -0.2, 0, -0.1, 0], 
+let verts = [[-0.9, 0.6, -0.7, 0.6, -0.7, -0.6], [-0.9, -0.6, -0.9, 0.6, -0.7, -0.6], [-0.7, 0.6, -0.7, 0.5, -0.2, 0.5],
+[-0.7, -0.6, -0.7, -0.5, -0.2, -0.5], [-0.2, 0.5, -0.2, 0, -0.1, 0], [-0.2, -0.5, -0.2, 0, -0.1, 0],
 [-0.1, 0.6, 0, 0.6, 0, 0.5], [0, 0.6, 0, 0.5, 0.4, 0.6], [0, 0.5, 0.4, 0.6, 0.4, 0.5], [0.4, 0.5, 0.4, 0.6, 0.8, 0.5],
 [0.4, 0.6, 0.8, 0.6, 0.8, 0.5], [0.8, 0.6, 0.8, 0.5, 0.9, 0.6], [0.3, 0.5, 0.3, 0.1, 0.5, 0.1],
 [0.3, 0.5, 0.5, 0.5, 0.5, 0.1], [0.5, 0.1, 0.3, 0.1, 0.5, -0.3], [0.5, -0.3, 0.3, -0.3, 0.3, 0.1],
@@ -186,5 +191,12 @@ function copyPainting() {
   var len = triangleList.length;
   for (var i = 0; i < len; i++) {
     triangleList[i].drawing_render([verts[i][0], verts[i][1], verts[i][2], verts[i][3], verts[i][4], verts[i][5]]);
+  }
+}
+
+function undo() {
+  if (g_shapesList.length > 0) {
+    g_shapesList.pop();
+    renderAllShapes();
   }
 }

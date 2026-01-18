@@ -14,6 +14,7 @@
     <br>
 
     <button type="button" id="clearButton">Clear</button>
+    <button type="button" id="undoButton">Undo</button>
     
     <br><br>
 
@@ -31,6 +32,9 @@
     <p>
         Blue <input type="range" min="0" max="100" value="100" class="slider" id="blueSlide">
     </p>
+    <p>
+        Transparency <input type="range" min="0" max="100" value="100" class="slider" id="alphaSlide">
+    </p>
 
     <p>
         Size <input type="range" min="5" max="40" value="5" class="slider" id="sizeSlide">
@@ -40,6 +44,7 @@
     </p>
     <button id="copyButton">Copy Drawing</button><br>
     <img src="drawing.jpg" width="165" height="233.25">
+    <p>Note: I added the ability to use transparent paint and an undo button.</p>
 
     <script src="lib/cuon-utils.js"></script>
     <script src="lib/webgl-debug.js"></script>

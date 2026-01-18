@@ -47,11 +47,12 @@ const CIRCLE = 2;
 let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
 let g_selectedSize = 5;
 let g_selectedShape = POINT;
+let g_selectedSegments = 10;
 
 function actionsForHTMLUI() {
   document.getElementById('pointButton').onclick = function () { g_selectedShape = POINT; };
   document.getElementById('triangleButton').onclick = function () { g_selectedShape = TRIANGLE; };
-  document.getElementById('circleButton').onclick = function () {g_selectedShape = CIRCLE; };
+  document.getElementById('circleButton').onclick = function () { g_selectedShape = CIRCLE; };
 
   document.getElementById('clearButton').onclick = function () { g_shapesList = []; renderAllShapes(); };
 
@@ -60,6 +61,7 @@ function actionsForHTMLUI() {
   document.getElementById('blueSlide').addEventListener('mouseup', function () { g_selectedColor[2] = this.value / 100; });
 
   document.getElementById('sizeSlide').addEventListener('mouseup', function () { g_selectedSize = this.value; });
+  document.getElementById('segmentsSlide').addEventListener('mouseup', function () { g_selectedSegments = this.value; console.log(g_selectedSegments);});
 }
 
 var g_shapesList = [];
@@ -84,6 +86,9 @@ function click(ev) {
   point.position = [x, y];
   point.color = g_selectedColor.slice();
   point.size = g_selectedSize;
+  if (point.type == 'circle') {
+    point.segments = g_selectedSegments;
+  }
   g_shapesList.push(point);
 
   renderAllShapes();

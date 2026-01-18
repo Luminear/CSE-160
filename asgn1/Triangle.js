@@ -19,6 +19,16 @@ class Triangle {
         var d = this.size/200.0
         drawTriangle([xy[0], xy[1], xy[0] + d, xy[1], xy[0], xy[1] + d]);
     }
+
+    drawing_render(vertices) {
+        var rgba = this.color;
+
+        // Pass the color of a point to u_FragColor variable
+        gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
+        
+        // Draw
+        drawTriangle(vertices);
+    }
 }
 
 function drawTriangle(vertices) {

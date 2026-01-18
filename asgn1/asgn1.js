@@ -61,7 +61,9 @@ function actionsForHTMLUI() {
   document.getElementById('blueSlide').addEventListener('mouseup', function () { g_selectedColor[2] = this.value / 100; });
 
   document.getElementById('sizeSlide').addEventListener('mouseup', function () { g_selectedSize = this.value; });
-  document.getElementById('segmentsSlide').addEventListener('mouseup', function () { g_selectedSegments = this.value; console.log(g_selectedSegments);});
+  document.getElementById('segmentsSlide').addEventListener('mouseup', function () { g_selectedSegments = this.value; console.log(g_selectedSegments); });
+
+  document.getElementById('copyButton').onclick = function () { copyPainting(); };
 }
 
 var g_shapesList = [];
@@ -151,5 +153,38 @@ function convertCoordsToGL(ev) {
 
   x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
   y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+  console.log("x:", x, "y:", y);
   return ([x, y]);
+}
+
+let verts = [[-0.9, 0.6, -0.7, 0.6, -0.7, -0.6], [-0.9, -0.6, -0.9, 0.6, -0.7, -0.6], [-0.7, 0.6, -0.7, 0.5, -0.2, 0.5], 
+[-0.7, -0.6, -0.7, -0.5, -0.2, -0.5], [-0.2, 0.5, -0.2, 0, -0.1, 0], [-0.2, -0.5, -0.2, 0, -0.1, 0], 
+[-0.1, 0.6, 0, 0.6, 0, 0.5], [0, 0.6, 0, 0.5, 0.4, 0.6], [0, 0.5, 0.4, 0.6, 0.4, 0.5], [0.4, 0.5, 0.4, 0.6, 0.8, 0.5],
+[0.4, 0.6, 0.8, 0.6, 0.8, 0.5], [0.8, 0.6, 0.8, 0.5, 0.9, 0.6], [0.3, 0.5, 0.3, 0.1, 0.5, 0.1],
+[0.3, 0.5, 0.5, 0.5, 0.5, 0.1], [0.5, 0.1, 0.3, 0.1, 0.5, -0.3], [0.5, -0.3, 0.3, -0.3, 0.3, 0.1],
+[0.3, -0.3, 0.4, -0.3, 0.3, -0.45], [0.4, -0.3, 0.4, -0.6, 0.2, -0.6], [0.4, -0.3, 0.5, -0.3, 0.5, -0.45],
+[0.4, -0.3, 0.4, -0.6, 0.6, -0.6]];
+function copyPainting() {
+  var triangleList = [];
+  // Quad 1: x: -0.715 y: 0.685
+  // Quad 2: x: 0.765 y: 0.735
+  // Quad 3: x: -0.655 y: -0.565
+  // Quad 4: x: 0.7 y: -0.555
+
+  var vertLen = verts.length;
+  for (var i = 0; i < vertLen; i++) {
+    let point = new Triangle();
+
+    point.position = [verts[i][0], verts[i][1]];
+    point.color = g_selectedColor.slice();
+
+    triangleList.push(point);
+  }
+
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  var len = triangleList.length;
+  for (var i = 0; i < len; i++) {
+    triangleList[i].drawing_render([verts[i][0], verts[i][1], verts[i][2], verts[i][3], verts[i][4], verts[i][5]]);
+  }
 }

@@ -35,7 +35,7 @@ class Cube {
         this.drawTriangle3D([0, 0, 1, 1, 0, 0, 1, 0, 1]);
         this.drawTriangle3D([0, 0, 1, 1, 0, 0, 0, 0, 0]);
 
-        gl.uniform4f(u_FragColor, rgba[0] * 0.6, rgba[1] * 0.6, rgba[2] * 0.6, rgba[3]);
+        gl.uniform4f(u_FragColor, rgba[0] * 0.95, rgba[1] * 0.95, rgba[2] * 0.95, rgba[3]);
         // Back of cube
         this.drawTriangle3D([0, 0, 1, 1, 1, 1, 1, 0, 1]);
         this.drawTriangle3D([0, 1, 1, 1, 1, 1, 0, 0, 1]);

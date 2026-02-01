@@ -46,6 +46,7 @@ function main() {
 let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
 let g_globalAngle = 0;
 let g_tailAngle = 0;
+let g_tailMidAngle = 0;
 
 function actionsForHTMLUI() {
   document.getElementById('angleSlide').oninput = function () {
@@ -53,6 +54,9 @@ function actionsForHTMLUI() {
   };
   document.getElementById('tailSlide').oninput = function () {
     g_tailAngle = this.value; renderAllShapes();
+  };
+  document.getElementById('tailMidSlide').oninput = function () {
+    g_tailMidAngle = this.value; renderAllShapes();
   };
 }
 
@@ -135,31 +139,90 @@ function renderAllShapes() {
 
   var body = new Cube();
   body.color = [1.0, 0.0, 0.0, 1.0];
-  body.matrix.translate(-0.25, -0.75, 0);
-  body.matrix.rotate(-5, 1, 0, 0);
-  body.matrix.scale(0.5, 0.3, 0.5);
+  body.matrix.translate(-0.25, -0.5, -0.2);
+  body.matrix.rotate(0, 1, 0, 0);
+  body.matrix.scale(0.5, 0.4, 0.75);
   body.render();
 
-  var leftArm = new Cube();
-  leftArm.color = [1.0, 1.0, 0.0, 1.0];
-  leftArm.matrix.setTranslate(0, -0.5, 0);
-  leftArm.matrix.rotate(-5, 1, 0, 0);
-  leftArm.matrix.rotate(-g_tailAngle, 0, 0, 1);
-  var tailEndCoords = new Matrix4(leftArm.matrix);
-  leftArm.matrix.scale(0.25, 0.7, 0.5);
-  leftArm.matrix.translate(-0.5, 0.2, 0);
-  leftArm.render();
+  var head = new Cube();
+  head.color = [0.0, 0.5, 1.0, 1.0];
+  head.matrix.translate(-0.175, -0.25, -0.5);
+  head.matrix.rotate(0, 1, 0, 0);
+  head.matrix.scale(0.35, 0.35, 0.35);
+  head.render();
+
+  var leftEye = new Cube();
+  leftEye.color = [0.35, 0.35, 0.35, 1.0];
+  leftEye.matrix.translate(0.05, -0.05, -0.55);
+  leftEye.matrix.rotate(0, 1, 0, 0);
+  leftEye.matrix.scale(0.1, 0.1, 0.1);
+  leftEye.render();
+
+  var rightEye = new Cube();
+  rightEye.color = [0.35, 0.35, 0.35, 1.0];
+  rightEye.matrix.translate(-0.15, -0.05, -0.55);
+  rightEye.matrix.rotate(0, 1, 0, 0);
+  rightEye.matrix.scale(0.1, 0.1, 0.1);
+  rightEye.render();
+
+  var frontLeftLeg = new Cube();
+  frontLeftLeg.color = [1.0, 0.5, 0.0, 1.0];
+  frontLeftLeg.matrix.translate(0.15, -0.8, -0.2);
+  frontLeftLeg.matrix.rotate(0, 1, 0, 0);
+  frontLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+  frontLeftLeg.render();
+
+  var frontRightLeg = new Cube();
+  frontRightLeg.color = [1.0, 0.5, 0.0, 1.0];
+  frontRightLeg.matrix.translate(-0.25, -0.8, -0.2);
+  frontRightLeg.matrix.rotate(0, 1, 0, 0);
+  frontRightLeg.matrix.scale(0.1, 0.3, 0.1);
+  frontRightLeg.render();
+
+  var backLeftLeg = new Cube();
+  backLeftLeg.color = [1.0, 0.5, 0.0, 1.0];
+  backLeftLeg.matrix.translate(0.15, -0.8, 0.45);
+  backLeftLeg.matrix.rotate(0, 1, 0, 0);
+  backLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+  backLeftLeg.render();
+
+  var backRightLeg = new Cube();
+  backRightLeg.color = [1.0, 0.5, 0.0, 1.0];
+  backRightLeg.matrix.translate(-0.25, -0.8, 0.45);
+  backRightLeg.matrix.rotate(0, 1, 0, 0);
+  backRightLeg.matrix.scale(0.1, 0.3, 0.1);
+  backRightLeg.render();
+
+  var tailBegin = new Cube();
+  tailBegin.color = [1.0, 1.0, 0.0, 1.0];
+  tailBegin.matrix.setTranslate(0, -0.45, 0);
+  tailBegin.matrix.rotate(5, 1, 0, 0);
+  tailBegin.matrix.rotate(-g_tailAngle, 0, 0, 1);
+  var tailMidCoords = new Matrix4(tailBegin.matrix);
+  tailBegin.matrix.translate(-0.075, 0.35, 0.4);
+  tailBegin.matrix.scale(0.15, 0.25, 0.15);
+  tailBegin.render();
+  
+  var tailMid = new Cube();
+  tailMid.color = [0.5, 0.5, 1.0, 1.0];
+  tailMid.matrix = tailMidCoords;
+  tailMid.matrix.translate(-0.07, 0.50, 0.405);
+  tailMid.matrix.rotate(-g_tailMidAngle, 1, 0, 0);
+  var tailEndCoords = new Matrix4(tailMid.matrix);
+  tailMid.matrix.scale(0.14, 0.3, 0.14);
+  tailMid.matrix.translate(0, 0.15, 0);
+  tailMid.render();
 
   var tailEnd = new Cube();
   tailEnd.color = [1.0, 0.0, 1.0, 1.0];
   tailEnd.matrix = tailEndCoords;
-  tailEnd.matrix.translate(-0.1, 0.9, 0.1, 0);
-  tailEnd.matrix.rotate(0, 1, 0, 0);
-  tailEnd.matrix.scale(0.2, 0.2, 0.3);
+  tailEnd.matrix.translate(0.005, 0.3, 0);
+  tailEnd.matrix.rotate(35, 1, 0, 0);
+  tailEnd.matrix.scale(0.13, 0.29, 0.13);
   tailEnd.render();
 
   var duration = performance.now() - startTime;
-  sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration), "numdot");
+  sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration) / 10, "numdot");
 }
 
 function sendTextToHTML(text, htmlID) {

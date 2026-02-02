@@ -30,15 +30,10 @@ function main() {
   actionsForHTMLUI();
 
   // Register function (event handler) to be called on a mouse press
-  // canvas.onmousedown = click;
-  // canvas.onmousemove = function (ev) { if (ev.buttons == 1) { click(ev) } };
+  canvas.onmousedown = click;
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-  // gl.enable(gl.BLEND);
-  // // Set blending function
-  // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // renderAllShapes();
   requestAnimationFrame(tick);
@@ -49,9 +44,13 @@ let g_globalAngle = 0;
 let g_tailAngle = 0;
 let g_tailMidAngle = 0;
 let g_headAngle = 0;
+let g_headAngle2 = 0;
+let g_leftEyeScale = 0.1;
+let g_rightEyeScale = 0.1;
 let g_headAnim = false;
 let g_tailAnim = false;
 let g_tailMidAnim = false;
+let pokeAnim = false;
 
 function actionsForHTMLUI() {
   document.getElementById('angleSlide').oninput = function () {
@@ -85,22 +84,6 @@ function actionsForHTMLUI() {
     g_tailMidAnim = false;
   }
 }
-
-// function click(ev) {
-
-//   let [x, y] = convertCoordsToGL(ev);
-
-//   let point;
-//   if (g_selectedShape == TRIANGLE) {
-//     point = new Triangle();
-//   }
-
-//   point.position = [x, y];
-//   point.color = g_selectedColor.slice();
-//   g_shapesList.push(point);
-
-//   renderAllShapes();
-// }
 
 function setupWebGL() {
   // Retrieve <canvas> element
@@ -169,10 +152,32 @@ function updateAnimAngles() {
     g_headAngle = (15 * Math.sin(g_seconds));
   }
   if (g_tailAnim) {
-    g_tailAngle = (20 * Math.sin(2*g_seconds));
+    g_tailAngle = (20 * Math.sin(2 * g_seconds));
   }
   if (g_tailMidAnim) {
     g_tailMidAngle = (25 * Math.sin(g_seconds));
+  }
+  if (pokeAnim) {
+    g_leftEyeScale = 0.025;
+    g_rightEyeScale = 0.025;
+    g_headAngle2 = (20 * Math.sin(4 * g_seconds));
+  }
+}
+
+let locked = false;
+function click(ev) {
+  if (ev.shiftKey) {
+    if (locked) return;
+    locked = true;
+    console.log("Clicked with shift!");
+    pokeAnim = true;
+    setTimeout(() => {
+      locked = false;
+      pokeAnim = false;
+      g_leftEyeScale = 0.1;
+      g_rightEyeScale = 0.1;
+      // g_headAngle2 = 0;
+    }, 3000);
   }
 }
 
@@ -197,6 +202,7 @@ function renderAllShapes() {
   head.color = [1.0, 0.5, 0.0, 1.0];
   head.matrix.translate(0.175, -0.25, -0.15);
   head.matrix.rotate(g_headAngle, 1, 0, 0);
+  head.matrix.rotate(g_headAngle2, 0, 1, 0);
   head.matrix.rotate(180, 0, 1, 0);
   var eyeCoords = new Matrix4(head.matrix);
   var eyeCoords2 = new Matrix4(head.matrix);
@@ -210,7 +216,7 @@ function renderAllShapes() {
   leftEye.matrix = eyeCoords;
   leftEye.matrix.translate(0.125, 0.175, 0.4);
   leftEye.matrix.rotate(180, 0, 1, 0);
-  leftEye.matrix.scale(0.1, 0.1, 0.1);
+  leftEye.matrix.scale(0.1, g_leftEyeScale, 0.1);
   leftEye.render();
 
   var rightEye = new Cube();
@@ -218,7 +224,7 @@ function renderAllShapes() {
   rightEye.matrix = eyeCoords2;
   rightEye.matrix.translate(0.325, 0.175, 0.4);
   rightEye.matrix.rotate(180, 0, 1, 0);
-  rightEye.matrix.scale(0.1, 0.1, 0.1);
+  rightEye.matrix.scale(0.1, g_rightEyeScale, 0.1);
   rightEye.render();
 
   var leftEar = new Cube();

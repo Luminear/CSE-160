@@ -43,6 +43,7 @@ let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
 let g_globalAngle = 0;
 let g_tailAngle = 0;
 let g_tailMidAngle = 0;
+let g_tailEndAngle = 0;
 let g_headAngle = 0;
 let g_headAngle2 = 0;
 let g_leftEyeScale = 0.1;
@@ -50,6 +51,7 @@ let g_rightEyeScale = 0.1;
 let g_headAnim = false;
 let g_tailAnim = false;
 let g_tailMidAnim = false;
+let g_tailEndAnim = false;
 let pokeAnim = false;
 
 function actionsForHTMLUI() {
@@ -61,6 +63,9 @@ function actionsForHTMLUI() {
   };
   document.getElementById('tailMidSlide').oninput = function () {
     g_tailMidAngle = this.value; renderAllShapes();
+  };
+  document.getElementById('tailEndSlide').oninput = function () {
+    g_tailEndAngle = this.value; renderAllShapes();
   };
   document.getElementById('headSlide').oninput = function () {
     g_headAngle = this.value; renderAllShapes();
@@ -82,6 +87,12 @@ function actionsForHTMLUI() {
   }
   document.getElementById('animTailMidOffButton').onclick = function () {
     g_tailMidAnim = false;
+  }
+  document.getElementById('animTailEndOnButton').onclick = function () {
+    g_tailEndAnim = true;
+  }
+  document.getElementById('animTailEndOffButton').onclick = function () {
+    g_tailEndAnim = false;
   }
 }
 
@@ -157,10 +168,13 @@ function updateAnimAngles() {
   if (g_tailMidAnim) {
     g_tailMidAngle = (25 * Math.sin(g_seconds));
   }
+  if (g_tailEndAnim) {
+    g_tailEndAngle = (25 * Math.sin(g_seconds));
+  }
   if (pokeAnim) {
     g_leftEyeScale = 0.025;
     g_rightEyeScale = 0.025;
-    g_headAngle2 = (20 * Math.sin(4 * g_seconds));
+    g_headAngle2 = (15 * Math.sin(4 * g_seconds));
   }
 }
 
@@ -295,7 +309,7 @@ function renderAllShapes() {
   tailEnd.color = [0.9, 0.5, 0.1, 1.0];
   tailEnd.matrix = tailEndCoords;
   tailEnd.matrix.translate(0.005, 0.3, 0);
-  tailEnd.matrix.rotate(35, 1, 0, 0);
+  tailEnd.matrix.rotate(-g_tailEndAngle, 1, 0, 0);
   tailEnd.matrix.scale(0.13, 0.29, 0.13);
   tailEnd.render();
 

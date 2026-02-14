@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Assignment 2</title>
+</head>
+
+<body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+        Please use a browser that supports "canvas"
+    </canvas>
+
+    <br>
+
+    <p id="numdot">XXX</p>
+    <p>
+        Camera Angle <input type="range" min="-225" max="225" value="0" class="slider" id="angleSlide">
+    </p>
+
+    <p>
+        Tail &lpar;Start&rpar;<input type="range" min="-20" max="20" value="0" class="slider" id="tailSlide">
+    </p>
+
+    <p>
+        Tail &lpar;Middle&rpar;<input type="range" min="-25" max="25" value="0" class="slider" id="tailMidSlide">
+    </p>
+
+    <p>
+        Tail &lpar;End&rpar;<input type="range" min="-25" max="25" value="0" class="slider" id="tailEndSlide">
+    </p>
+
+    <p>
+        Head <input type="range" min="-15" max="15" value="0" class="slider" id="headSlide">
+    </p>
+
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/cuon-matrix-cse160.js"></script>
+    <script src="Cube.js"></script>
+    <script src="asgn3.js"></script>
+</body>
+
+</html>

@@ -297,7 +297,6 @@ function keydown(ev) {
   }
 
   renderAllShapes();
-  console.log(ev.keyCode);
 }
 
 let locked = false;
@@ -305,7 +304,6 @@ function click(ev) {
   if (ev.shiftKey) {
     if (locked) return;
     locked = true;
-    console.log("Clicked with shift!");
     pokeAnim = true;
     setTimeout(() => {
       locked = false;
@@ -322,6 +320,10 @@ var g_up = new Vector3([0, 1, 0]);
 
 function renderAllShapes() {
   var startTime = performance.now();
+  
+  var projMat = new Matrix4();
+  projMat.setPerspective(60.0, 1 * canvas.width / canvas.height, 0.1, 1000);
+  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
   var viewMat = new Matrix4();
   viewMat.setLookAt(g_eye.elements[0], g_eye.elements[1], g_eye.elements[2],
@@ -329,16 +331,26 @@ function renderAllShapes() {
     g_up.elements[0], g_up.elements[1], g_up.elements[2]);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
-  var projMat = new Matrix4();
-  projMat.setPerspective(60.0, 1 * canvas.width / canvas.height, 0.1, 1000);
-  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
-
   var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+  var floor = new Cube();
+  floor.color = [0.5, 1.0, 0.5, 1.0];
+  floor.textureNum = -2;
+  floor.matrix.scale(49.9, 0.1, 49.9);
+  floor.matrix.translate(-0.5, -10, -0.5);
+  floor.render();
+  
+  var sky = new Cube();
+  sky.color = [0.5, 0.5, 1.0, 1.0];
+  sky.textureNum = -2;
+  sky.matrix.scale(50, 50, 50);
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+  sky.render();
 
   var body = new Cube();
   body.color = [0.95, 0.45, 0.0, 1.0];

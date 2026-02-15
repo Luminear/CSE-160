@@ -19,6 +19,7 @@ var FSHADER_SOURCE = `
   varying vec2 v_UV;
   uniform vec4 u_FragColor;
   uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
   uniform int u_whichTexture;
   void main() {
     if (u_whichTexture == -2) {
@@ -27,6 +28,8 @@ var FSHADER_SOURCE = `
       gl_FragColor = vec4(v_UV, 1.0, 1.0);
     } else if (u_whichTexture == 0) {
       gl_FragColor = texture2D(u_Sampler0, v_UV);
+    } else if (u_whichTexture == 1) {
+      gl_FragColor = texture2D(u_Sampler1, v_UV);
     } else {
       gl_FragColor = vec4(1, 0.2, 0.2, 1);
     }
@@ -42,6 +45,7 @@ let u_ProjectionMatrix;
 let u_ViewMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
+let u_Sampler1;
 let u_whichTexture;
 
 function main() {
@@ -53,8 +57,23 @@ function main() {
 
 
   // Register function (event handler) to be called on a mouse press
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
   canvas.onmousedown = click;
   document.onkeydown = keydown;
+
+  let interval;
+  canvas.addEventListener("mouseenter", (ev) => {
+    interval = setInterval(function () {
+      convertCoordsToGL(ev);
+    }, 50);
+  });
+
+  canvas.addEventListener("mouseleave", function () {
+    clearInterval(interval);
+  });
 
   initTextures();
 
@@ -66,7 +85,7 @@ function main() {
 }
 
 let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
-let g_globalAngle = 0;
+let g_globalAngle = 90;
 let g_tailAngle = 0;
 let g_tailMidAngle = 0;
 let g_tailEndAngle = 0;
@@ -74,27 +93,17 @@ let g_headAngle = 0;
 let g_headAngle2 = 0;
 let g_leftEyeScale = 0.1;
 let g_rightEyeScale = 0.1;
-let g_headAnim = false;
+let g_headAnim = true;
 let g_tailAnim = false;
 let g_tailMidAnim = false;
 let g_tailEndAnim = false;
 let pokeAnim = false;
+let mouseX = 0;
+let mouseY = 0;
 
 function actionsForHTMLUI() {
   document.getElementById('angleSlide').oninput = function () {
     g_globalAngle = this.value; renderAllShapes();
-  };
-  document.getElementById('tailSlide').oninput = function () {
-    g_tailAngle = this.value; renderAllShapes();
-  };
-  document.getElementById('tailMidSlide').oninput = function () {
-    g_tailMidAngle = this.value; renderAllShapes();
-  };
-  document.getElementById('tailEndSlide').oninput = function () {
-    g_tailEndAngle = this.value; renderAllShapes();
-  };
-  document.getElementById('headSlide').oninput = function () {
-    g_headAngle = this.value; renderAllShapes();
   };
 }
 
@@ -169,6 +178,12 @@ function connectVariablesToGLSL() {
     return;
   }
 
+  u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+  if (!u_Sampler1) {
+    console.log('Failed to get the storage location of u_Sampler1');
+    return;
+  }
+
   u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
   if (!u_whichTexture) {
     console.log('Failed to get the storage location of u_whichTexture');
@@ -189,6 +204,15 @@ function initTextures() {
   image.onload = function () { loadTexture0(image); }
   image.src = 'dirt.webp';
 
+  var image1 = new Image();
+  if (!image1) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+
+  image1.onload = function () { loadTexture1(image1); }
+  image1.src = 'stone.png';
+
   return true;
 }
 
@@ -206,6 +230,26 @@ function loadTexture0(image) {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image)
 
   gl.uniform1i(u_Sampler0, 0);
+
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  //gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+}
+
+function loadTexture1(image) {
+  var texture = gl.createTexture();
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image)
+
+  gl.uniform1i(u_Sampler1, 1);
 
   // gl.clear(gl.COLOR_BUFFER_BIT);
 
@@ -319,86 +363,140 @@ var g_at = new Vector3([0, 0, -1]);
 var g_up = new Vector3([0, 1, 0]);
 
 var g_map = [
-  [6, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 6],
+  [5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 5],
   [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 0, 0, 2],
-  [2, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 2],
-  [2, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 1, 2, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2],
-  [2, 0, 1, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 2, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 1, 2, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0,
-    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+  [1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 2, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1],
   [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 4],
-  [6, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 6]
+  [5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 5]
 ];
 
-function drawMap() {
-  for (x = 0; x < 32; x++) {
-    for (y = 0; y < 32; y++) {
-      if (g_map[x][y] >= 1) {
-        for (i = 0; i < g_map[x][y]; i++) {
-          var wall = new Cube();
-          wall.color = [1.0, 1.0, 1.0, 1.0];
-          wall.matrix.translate(x - 17, (-0.9 + i), y - 12);
-          wall.render();
+var walls = [];
+for (x = 0; x < 32; x++) {
+  for (y = 0; y < 32; y++) {
+    if (g_map[x][y] >= 1) {
+      for (i = 0; i < g_map[x][y]; i++) {
+        var wall = new Cube();
+        if (x == 0 || x == 31 || y == 0 || y == 31) {
+          wall.textureNum = 1;
         }
+        wall.matrix.translate(x - 17, (-0.9 + i), y - 12);
+        walls.push(wall);
       }
     }
   }
 }
+
+function drawMap() {
+  for (i = 0; i < walls.length; i++) {
+    walls[i].render();
+  }
+}
+
+var floor = new Cube();
+floor.color = [0.5, 1.0, 0.5, 1.0];
+floor.textureNum = -2;
+floor.matrix.scale(49.9, 0.1, 49.9);
+floor.matrix.translate(-0.5, -10, -0.5);
+
+var sky = new Cube();
+sky.color = [0.5, 0.5, 1.0, 1.0];
+sky.textureNum = -2;
+sky.matrix.scale(50, 50, 50);
+sky.matrix.translate(-0.5, -0.5, -0.5);
+
+var body = new Cube();
+body.color = [0.95, 0.45, 0.0, 1.0];
+body.textureNum = -2;
+body.matrix.translate(-0.25, -0.5, -0.2);
+body.matrix.rotate(0, 1, 0, 0);
+body.matrix.scale(0.5, 0.4, 0.75);
+
+var frontLeftLeg = new Cube();
+frontLeftLeg.color = [1.0, 0.55, 0.0, 1.0];
+frontLeftLeg.textureNum = -2;
+frontLeftLeg.matrix.translate(0.15, -0.8, -0.2);
+frontLeftLeg.matrix.rotate(0, 1, 0, 0);
+frontLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var frontRightLeg = new Cube();
+frontRightLeg.color = [1.0, 0.55, 0.0, 1.0];
+frontRightLeg.textureNum = -2;
+frontRightLeg.matrix.translate(-0.25, -0.8, -0.2);
+frontRightLeg.matrix.rotate(0, 1, 0, 0);
+frontRightLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var backLeftLeg = new Cube();
+backLeftLeg.color = [0.85, 0.45, 0.0, 1.0];
+backLeftLeg.textureNum = -2;
+backLeftLeg.matrix.translate(0.15, -0.8, 0.45);
+backLeftLeg.matrix.rotate(0, 1, 0, 0);
+backLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var backRightLeg = new Cube();
+backRightLeg.color = [0.85, 0.45, 0.0, 1.0];
+backRightLeg.textureNum = -2;
+backRightLeg.matrix.translate(-0.25, -0.8, 0.45);
+backRightLeg.matrix.rotate(0, 1, 0, 0);
+backRightLeg.matrix.scale(0.1, 0.3, 0.1);
 
 function renderAllShapes() {
   var startTime = performance.now();
@@ -422,30 +520,13 @@ function renderAllShapes() {
 
   drawMap();
 
-  var floor = new Cube();
-  floor.color = [0.5, 1.0, 0.5, 1.0];
-  floor.textureNum = -2;
-  floor.matrix.scale(49.9, 0.1, 49.9);
-  floor.matrix.translate(-0.5, -10, -0.5);
   floor.render();
-
-  var sky = new Cube();
-  sky.color = [0.5, 0.5, 1.0, 1.0];
-  sky.textureNum = -2;
-  sky.matrix.scale(50, 50, 50);
-  sky.matrix.translate(-0.5, -0.5, -0.5);
   sky.render();
-
-  var body = new Cube();
-  body.color = [0.95, 0.45, 0.0, 1.0];
-  body.textureNum = -2;
-  body.matrix.translate(-0.25, -0.5, -0.2);
-  body.matrix.rotate(0, 1, 0, 0);
-  body.matrix.scale(0.5, 0.4, 0.75);
   body.render();
 
   var head = new Cube();
   head.color = [1.0, 0.5, 0.0, 1.0];
+  head.textureNum = -2;
   head.matrix.translate(0.175, -0.25, -0.15);
   head.matrix.rotate(g_headAngle, 1, 0, 0);
   head.matrix.rotate(g_headAngle2, 0, 1, 0);
@@ -493,38 +574,14 @@ function renderAllShapes() {
   rightEar.matrix.scale(0.1, 0.1, 0.05);
   rightEar.render();
 
-  var frontLeftLeg = new Cube();
-  frontLeftLeg.color = [1.0, 0.55, 0.0, 1.0];
-  frontLeftLeg.textureNum = -2;
-  frontLeftLeg.matrix.translate(0.15, -0.8, -0.2);
-  frontLeftLeg.matrix.rotate(0, 1, 0, 0);
-  frontLeftLeg.matrix.scale(0.1, 0.3, 0.1);
   frontLeftLeg.render();
-
-  var frontRightLeg = new Cube();
-  frontRightLeg.color = [1.0, 0.55, 0.0, 1.0];
-  frontRightLeg.textureNum = -2;
-  frontRightLeg.matrix.translate(-0.25, -0.8, -0.2);
-  frontRightLeg.matrix.rotate(0, 1, 0, 0);
-  frontRightLeg.matrix.scale(0.1, 0.3, 0.1);
   frontRightLeg.render();
-
-  var backLeftLeg = new Cube();
-  backLeftLeg.color = [0.85, 0.45, 0.0, 1.0];
-  backLeftLeg.matrix.translate(0.15, -0.8, 0.45);
-  backLeftLeg.matrix.rotate(0, 1, 0, 0);
-  backLeftLeg.matrix.scale(0.1, 0.3, 0.1);
   backLeftLeg.render();
-
-  var backRightLeg = new Cube();
-  backRightLeg.color = [0.85, 0.45, 0.0, 1.0];
-  backRightLeg.matrix.translate(-0.25, -0.8, 0.45);
-  backRightLeg.matrix.rotate(0, 1, 0, 0);
-  backRightLeg.matrix.scale(0.1, 0.3, 0.1);
   backRightLeg.render();
 
   var tailBegin = new Cube();
   tailBegin.color = [0.9, 0.5, 0.1, 1.0];
+  tailBegin.textureNum = -2;
   tailBegin.matrix.setTranslate(0, -0.45, 0);
   tailBegin.matrix.rotate(5, 1, 0, 0);
   tailBegin.matrix.rotate(-g_tailAngle, 0, 0, 1);
@@ -535,6 +592,7 @@ function renderAllShapes() {
 
   var tailMid = new Cube();
   tailMid.color = [0.9, 0.5, 0.1, 1.0];
+  tailMid.textureNum = -2;
   tailMid.matrix = tailMidCoords;
   tailMid.matrix.translate(-0.07, 0.50, 0.405);
   tailMid.matrix.rotate(-g_tailMidAngle, 1, 0, 0);
@@ -545,6 +603,7 @@ function renderAllShapes() {
 
   var tailEnd = new Cube();
   tailEnd.color = [0.9, 0.5, 0.1, 1.0];
+  tailEnd.textureNum = -2;
   tailEnd.matrix = tailEndCoords;
   tailEnd.matrix.translate(0.005, 0.3, 0);
   tailEnd.matrix.rotate(-g_tailEndAngle, 1, 0, 0);
@@ -564,12 +623,62 @@ function sendTextToHTML(text, htmlID) {
   htmlElem.innerHTML = text;
 }
 
-// function convertCoordsToGL(ev) {
-//   var x = ev.clientX; // x coordinate of a mouse pointer
-//   var y = ev.clientY; // y coordinate of a mouse pointer
-//   var rect = ev.target.getBoundingClientRect();
+function convertCoordsToGL(ev) {
+  var x = mouseX; // x coordinate of a mouse pointer
+  var y = mouseY; // y coordinate of a mouse pointer
+  var rect = ev.target.getBoundingClientRect();
 
-//   x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
-//   y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
-//   return ([x, y]);
-// }
+  x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
+  y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+  let f = new Vector3();
+  f.set(g_at);
+  f.sub(g_eye);
+  if (x > 0.8) {
+    let rotMat = new Matrix4().setRotate(-4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.6) {
+    let rotMat = new Matrix4().setRotate(-2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.4) {
+    let rotMat = new Matrix4().setRotate(-1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.2) {
+    let rotMat = new Matrix4().setRotate(-0.5, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.2) {
+    let rotMat = new Matrix4().setRotate(0, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.4) {
+    let rotMat = new Matrix4().setRotate(0.5, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.6) {
+    let rotMat = new Matrix4().setRotate(1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.8) {
+    let rotMat = new Matrix4().setRotate(2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -1) {
+    let rotMat = new Matrix4().setRotate(4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  }
+
+  return ([x, y]);
+}

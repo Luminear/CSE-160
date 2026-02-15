@@ -54,6 +54,7 @@ function main() {
 
   // Register function (event handler) to be called on a mouse press
   canvas.onmousedown = click;
+  document.onkeydown = keydown;
 
   initTextures();
 
@@ -242,6 +243,63 @@ function updateAnimAngles() {
   }
 }
 
+function keydown(ev) {
+  if (ev.keyCode == 65) { // left
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let s = Vector3.cross(g_up, f);
+    s.normalize();
+    s.mul(0.5);
+    g_eye.add(s);
+    g_at.add(s);
+  } else if (ev.keyCode == 68) { // right
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let s = Vector3.cross(f, g_up);
+    s.normalize();
+    s.mul(0.5);
+    g_eye.add(s);
+    g_at.add(s);
+  } else if (ev.keyCode == 87) { // forward
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    f.normalize();
+    f.mul(0.5);
+    g_eye.add(f);
+    g_at.add(f);
+  } else if (ev.keyCode == 83) { // backward
+    let b = new Vector3();
+    b.set(g_eye);
+    b.sub(g_at);
+    b.normalize();
+    b.mul(0.5);
+    g_eye.add(b);
+    g_at.add(b);
+  } else if (ev.keyCode == 81) { // pan left
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let rotMat = new Matrix4().setRotate(10, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (ev.keyCode == 69) { // pan right
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let rotMat = new Matrix4().setRotate(-10, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  }
+
+  renderAllShapes();
+  console.log(ev.keyCode);
+}
+
 let locked = false;
 function click(ev) {
   if (ev.shiftKey) {
@@ -258,17 +316,25 @@ function click(ev) {
   }
 }
 
+var g_eye = new Vector3([0, 0, 0]);
+var g_at = new Vector3([0, 0, -1]);
+var g_up = new Vector3([0, 1, 0]);
+
 function renderAllShapes() {
   var startTime = performance.now();
 
-  var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
-  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
-
   var viewMat = new Matrix4();
+  viewMat.setLookAt(g_eye.elements[0], g_eye.elements[1], g_eye.elements[2],
+    g_at.elements[0], g_at.elements[1], g_at.elements[2],
+    g_up.elements[0], g_up.elements[1], g_up.elements[2]);
   gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
   var projMat = new Matrix4();
+  projMat.setPerspective(60.0, 1 * canvas.width / canvas.height, 0.1, 1000);
   gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
+
+  var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
+  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

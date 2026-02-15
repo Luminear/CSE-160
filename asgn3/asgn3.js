@@ -94,7 +94,7 @@ let g_headAngle2 = 0;
 let g_leftEyeScale = 0.1;
 let g_rightEyeScale = 0.1;
 let g_headAnim = true;
-let g_tailAnim = false;
+let g_tailAnim = true;
 let g_tailMidAnim = false;
 let g_tailEndAnim = false;
 let pokeAnim = false;
@@ -102,9 +102,7 @@ let mouseX = 0;
 let mouseY = 0;
 
 function actionsForHTMLUI() {
-  document.getElementById('angleSlide').oninput = function () {
-    g_globalAngle = this.value; renderAllShapes();
-  };
+  return;
 }
 
 function setupWebGL() {
@@ -384,15 +382,15 @@ var g_map = [
   [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 1, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 2, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -413,13 +411,13 @@ var g_map = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+  [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0,
+  [1, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0,
     0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1],
@@ -497,6 +495,71 @@ backRightLeg.textureNum = -2;
 backRightLeg.matrix.translate(-0.25, -0.8, 0.45);
 backRightLeg.matrix.rotate(0, 1, 0, 0);
 backRightLeg.matrix.scale(0.1, 0.3, 0.1);
+
+let kittens = [];
+
+function drawKitten(x, y, z) {
+  var babyCat = new Cube();
+  babyCat.color = [1.0, 0.5, 0.0, 1.0];
+  babyCat.textureNum = -2;
+  babyCat.matrix.translate(x, y, z);
+  var miniEyeCDS = new Matrix4(babyCat.matrix);
+  var miniEyeCDS2 = new Matrix4(babyCat.matrix);
+  var miniEarCDS = new Matrix4(babyCat.matrix);
+  var miniEarCDS2 = new Matrix4(babyCat.matrix);
+  var tailCDS = new Matrix4(babyCat.matrix);
+  babyCat.matrix.scale(0.25, 0.25, 0.25);
+  kittens.push(babyCat);
+  
+  var leftEar = new Cube();
+  leftEar.color = [1.0, 0.5, 0.0, 1.0];
+  leftEar.textureNum = -2;
+  leftEar.matrix = miniEarCDS;
+  leftEar.matrix.translate(0.055, 0.205, 0.15);
+  leftEar.matrix.rotate(45, 0, 0, 1);
+  leftEar.matrix.scale(0.06, 0.06, 0.03);
+  kittens.push(leftEar);
+
+  var rightEar = new Cube();
+  rightEar.color = [1.0, 0.5, 0.0, 1.0];
+  rightEar.textureNum = -2;
+  rightEar.matrix = miniEarCDS2;
+  rightEar.matrix.translate(0.2, 0.205, 0.15);
+  rightEar.matrix.rotate(45, 0, 0, 1);
+  rightEar.matrix.scale(0.06, 0.06, 0.03);
+  kittens.push(rightEar);
+
+  var leftEye = new Cube();
+  leftEye.color = [0.95, 0.95, 0.95, 1.0];
+  leftEye.textureNum = -2;
+  leftEye.matrix = miniEyeCDS;
+  leftEye.matrix.translate(0.09, 0.15, 0.275);
+  leftEye.matrix.rotate(180, 0, 1, 0);
+  leftEye.matrix.scale(0.06, 0.06, 0.06);
+  kittens.push(leftEye);
+
+  var rightEye = new Cube();
+  rightEye.color = [0.95, 0.95, 0.95, 1.0];
+  rightEye.textureNum = -2;
+  rightEye.matrix = miniEyeCDS2;
+  rightEye.matrix.translate(0.225, 0.15, 0.275);
+  rightEye.matrix.rotate(180, 0, 1, 0);
+  rightEye.matrix.scale(0.06, 0.06, 0.06);
+  kittens.push(rightEye);
+
+  var tail = new Cube();
+  tail.color = [0.95, 0.5, 0.0, 1.0];
+  tail.textureNum = -2;
+  tail.matrix = tailCDS;
+  tail.matrix.rotate(-10, 1, 0, 0);
+  tail.matrix.translate(0.1, 0.15, -0.025);
+  tail.matrix.scale(0.09, 0.3, 0.09);
+  kittens.push(tail);
+}
+
+drawKitten(-0.65, -0.8, -1.5);
+drawKitten(-0.15, -0.8, -1.25);
+drawKitten(0.35, -0.8, -1.5);
 
 function renderAllShapes() {
   var startTime = performance.now();
@@ -610,6 +673,10 @@ function renderAllShapes() {
   tailEnd.matrix.scale(0.13, 0.29, 0.13);
   tailEnd.render();
 
+  for (i = 0; i < kittens.length; i++) {
+    kittens[i].render()
+  }
+
   var duration = performance.now() - startTime;
   sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration) / 10, "numdot");
 }
@@ -634,22 +701,22 @@ function convertCoordsToGL(ev) {
   f.set(g_at);
   f.sub(g_eye);
   if (x > 0.8) {
-    let rotMat = new Matrix4().setRotate(-4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let rotMat = new Matrix4().setRotate(-8, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
   } else if (x > 0.6) {
-    let rotMat = new Matrix4().setRotate(-2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let rotMat = new Matrix4().setRotate(-4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
   } else if (x > 0.4) {
-    let rotMat = new Matrix4().setRotate(-1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let rotMat = new Matrix4().setRotate(-2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
   } else if (x > 0.2) {
-    let rotMat = new Matrix4().setRotate(-0.5, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let rotMat = new Matrix4().setRotate(-1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
@@ -659,22 +726,22 @@ function convertCoordsToGL(ev) {
     f_prime.add(g_eye);
     g_at.set(f_prime);
   } else if (x > -0.4) {
-    let rotMat = new Matrix4().setRotate(0.5, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
-    let f_prime = rotMat.multiplyVector3(f);
-    f_prime.add(g_eye);
-    g_at.set(f_prime);
-  } else if (x > -0.6) {
     let rotMat = new Matrix4().setRotate(1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
-  } else if (x > -0.8) {
+  } else if (x > -0.6) {
     let rotMat = new Matrix4().setRotate(2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);
-  } else if (x > -1) {
+  } else if (x > -0.8) {
     let rotMat = new Matrix4().setRotate(4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -1) {
+    let rotMat = new Matrix4().setRotate(8, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
     let f_prime = rotMat.multiplyVector3(f);
     f_prime.add(g_eye);
     g_at.set(f_prime);

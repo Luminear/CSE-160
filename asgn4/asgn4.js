@@ -1,0 +1,825 @@
+// Vertex shader program
+var VSHADER_SOURCE = `
+  precision mediump float;
+  attribute vec4 a_Position;
+  attribute vec2 a_UV;
+  attribute vec3 a_Normal;
+  varying vec2 v_UV;
+  varying vec3 v_Normal;
+  varying vec4 v_VertPos;
+  uniform mat4 u_ModelMatrix;
+  uniform mat4 u_GlobalRotateMatrix;
+  uniform mat4 u_ViewMatrix;
+  uniform mat4 u_ProjectionMatrix;
+  void main() {
+    gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
+    v_UV = a_UV;
+    v_Normal = a_Normal;
+    v_VertPos = u_ModelMatrix * a_Position;
+  }`
+
+// Fragment shader program
+var FSHADER_SOURCE = `
+  precision mediump float;
+  varying vec2 v_UV;
+  varying vec3 v_Normal;
+  uniform vec4 u_FragColor;
+  uniform sampler2D u_Sampler0;
+  uniform sampler2D u_Sampler1;
+  uniform int u_whichTexture;
+  uniform vec3 u_lightPos;
+  varying vec4 v_VertPos;
+  void main() {
+    if (u_whichTexture == -3) {
+      gl_FragColor = vec4((v_Normal + 1.0)/2.0, 1.0);
+    } else if (u_whichTexture == -2) {
+      gl_FragColor = u_FragColor;
+    } else if (u_whichTexture == -1) { // UV debug
+      gl_FragColor = vec4(v_UV, 1.0, 1.0);
+    } else if (u_whichTexture == 0) {
+      gl_FragColor = texture2D(u_Sampler0, v_UV);
+    } else if (u_whichTexture == 1) {
+      gl_FragColor = texture2D(u_Sampler1, v_UV);
+    } else {
+      gl_FragColor = vec4(1, 0.2, 0.2, 1);
+    }
+
+    vec3 lightVector = vec3(v_VertPos) - u_lightPos;
+    float r = length(lightVector);
+    if (r < 1.0) {
+      gl_FragColor = vec4(1, 0, 0, 1);
+    } else if (r < 2.0) {
+      gl_FragColor = vec4(0, 1, 0, 1);
+    }
+  }`
+
+let canvas;
+let gl;
+let a_Position;
+let a_UV;
+let a_Normal;
+let u_FragColor;
+let u_ModelMatrix;
+let u_ProjectionMatrix;
+let u_ViewMatrix;
+let u_GlobalRotateMatrix;
+let u_Sampler0;
+let u_Sampler1;
+let u_whichTexture;
+let u_lightPos;
+
+function main() {
+
+  setupWebGL();
+  connectVariablesToGLSL();
+
+  actionsForHTMLUI();
+
+
+  // Register function (event handler) to be called on a mouse press
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+  canvas.onmousedown = click;
+  document.onkeydown = keydown;
+
+  let interval;
+  canvas.addEventListener("mouseenter", (ev) => {
+    interval = setInterval(function () {
+      convertCoordsToGL(ev);
+    }, 50);
+  });
+
+  canvas.addEventListener("mouseleave", function () {
+    clearInterval(interval);
+  });
+
+  initTextures();
+
+  // Specify the color for clearing <canvas>
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+  // renderAllShapes();
+  requestAnimationFrame(tick);
+}
+
+let g_selectedColor = [1.0, 1.0, 1.0, 1.0];
+let g_globalAngle = 90;
+let g_tailAngle = 0;
+let g_tailMidAngle = 0;
+let g_tailEndAngle = 0;
+let g_headAngle = 0;
+let g_headAngle2 = 0;
+let g_leftEyeScale = 0.1;
+let g_rightEyeScale = 0.1;
+let g_headAnim = true;
+let g_tailAnim = true;
+let g_tailMidAnim = false;
+let g_tailEndAnim = false;
+let pokeAnim = false;
+let mouseX = 0;
+let mouseY = 0;
+let g_normalOn = false;
+let g_lightPos = [0, 1, -2];
+
+function actionsForHTMLUI() {
+  document.getElementById('normalOn').onclick = function () { g_normalOn = true; }
+  document.getElementById('normalOff').onclick = function () { g_normalOn = false; }
+
+  document.getElementById('lightSlideX').addEventListener('mousemove', function (ev) { if (ev.buttons == 1) { g_lightPos[0] = this.value / 100; renderAllShapes(); } });
+  document.getElementById('lightSlideY').addEventListener('mousemove', function (ev) { if (ev.buttons == 1) { g_lightPos[1] = this.value / 100; renderAllShapes(); } });
+  document.getElementById('lightSlideZ').addEventListener('mousemove', function (ev) { if (ev.buttons == 1) { g_lightPos[2] = this.value / 100; renderAllShapes(); } });
+
+  // document.getElementById('lightSlideX').oninput = function () {
+  //   g_lightPos[0] = this.value/100; renderAllShapes();
+  // };
+  // document.getElementById('lightSlideY').oninput = function () {
+  //   g_lightPos[1] = this.value/100; renderAllShapes();
+  // };
+  // document.getElementById('lightSlideZ').oninput = function () {
+  //   g_lightPos[2] = this.value/100; renderAllShapes();
+  // };
+}
+
+function setupWebGL() {
+  // Retrieve <canvas> element
+  canvas = document.getElementById('webgl');
+
+  // Get the rendering context for WebGL
+  gl = canvas.getContext("webgl", { preserveDrawingBuffer: true });
+  if (!gl) {
+    console.log('Failed to get the rendering context for WebGL');
+    return;
+  }
+
+  gl.enable(gl.DEPTH_TEST);
+}
+
+function connectVariablesToGLSL() {
+  // Initialize shaders
+  if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+    console.log('Failed to intialize shaders.');
+    return;
+  }
+
+  // // Get the storage location of a_Position
+  a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+  if (a_Position < 0) {
+    console.log('Failed to get the storage location of a_Position');
+    return;
+  }
+
+  a_UV = gl.getAttribLocation(gl.program, 'a_UV');
+  if (a_UV < 0) {
+    console.log('Failed to get the storage location of a_UV');
+    return;
+  }
+
+  a_Normal = gl.getAttribLocation(gl.program, 'a_Normal');
+  if (a_Normal < 0) {
+    console.log('Failed to get the storage location of a_Normal');
+    return;
+  }
+
+  // Get the storage location of u_FragColor
+  u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+  if (!u_FragColor) {
+    console.log('Failed to get the storage location of u_FragColor');
+    return;
+  }
+
+  u_lightPos = gl.getUniformLocation(gl.program, 'u_lightPos');
+  if (!u_lightPos) {
+    console.log('Failed to get the storage location of u_lightPos');
+    return;
+  }
+
+  u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+  if (!u_ModelMatrix) {
+    console.log('Failed to get the storage location of u_ModelMatrix');
+    return;
+  }
+
+  u_GlobalRotateMatrix = gl.getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
+  if (!u_GlobalRotateMatrix) {
+    console.log('Failed to get the storage location of u_GlobalRotateMatrix');
+    return;
+  }
+
+  u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+  if (!u_ViewMatrix) {
+    console.log('Failed to get the storage location of u_ViewMatrix');
+    return;
+  }
+
+  u_ProjectionMatrix = gl.getUniformLocation(gl.program, 'u_ProjectionMatrix');
+  if (!u_ProjectionMatrix) {
+    console.log('Failed to get the storage location of u_ProjectionMatrix');
+    return;
+  }
+
+  u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+  if (!u_Sampler0) {
+    console.log('Failed to get the storage location of u_Sampler0');
+    return;
+  }
+
+  u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+  if (!u_Sampler1) {
+    console.log('Failed to get the storage location of u_Sampler1');
+    return;
+  }
+
+  u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
+  if (!u_whichTexture) {
+    console.log('Failed to get the storage location of u_whichTexture');
+    return;
+  }
+
+  var identityM = new Matrix4();
+  gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
+}
+
+function initTextures() {
+  var image = new Image();
+  if (!image) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+
+  image.onload = function () { loadTexture0(image); }
+  image.src = 'dirt.webp';
+
+  var image1 = new Image();
+  if (!image1) {
+    console.log('Failed to create the image object');
+    return false;
+  }
+
+  image1.onload = function () { loadTexture1(image1); }
+  image1.src = 'stone.png';
+
+  return true;
+}
+
+function loadTexture0(image) {
+  var texture = gl.createTexture();
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image)
+
+  gl.uniform1i(u_Sampler0, 0);
+
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  //gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+}
+
+function loadTexture1(image) {
+  var texture = gl.createTexture();
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return false;
+  }
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image)
+
+  gl.uniform1i(u_Sampler1, 1);
+
+  // gl.clear(gl.COLOR_BUFFER_BIT);
+
+  //gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+}
+
+var g_startTime = performance.now() / 1000.0;
+var g_seconds = performance.now() / 1000.0 - g_startTime;
+
+function tick() {
+  g_seconds = performance.now() / 1000.0 - g_startTime;
+  // console.log(g_seconds);
+  updateAnimAngles();
+  renderAllShapes();
+  requestAnimationFrame(tick);
+}
+
+function updateAnimAngles() {
+  if (g_headAnim) {
+    g_headAngle = (15 * Math.sin(g_seconds));
+  }
+  if (g_tailAnim) {
+    g_tailAngle = (20 * Math.sin(2 * g_seconds));
+  }
+  if (g_tailMidAnim) {
+    g_tailMidAngle = (25 * Math.sin(g_seconds));
+  }
+  if (g_tailEndAnim) {
+    g_tailEndAngle = (25 * Math.sin(g_seconds));
+  }
+  if (pokeAnim) {
+    g_leftEyeScale = 0.025;
+    g_rightEyeScale = 0.025;
+    g_headAngle2 = (15 * Math.sin(4 * g_seconds));
+  }
+}
+
+function keydown(ev) {
+  if (ev.keyCode == 65) { // left
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let s = Vector3.cross(g_up, f);
+    s.normalize();
+    s.mul(0.5);
+    g_eye.add(s);
+    g_at.add(s);
+  } else if (ev.keyCode == 68) { // right
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let s = Vector3.cross(f, g_up);
+    s.normalize();
+    s.mul(0.5);
+    g_eye.add(s);
+    g_at.add(s);
+  } else if (ev.keyCode == 87) { // forward
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    f.normalize();
+    f.mul(0.5);
+    g_eye.add(f);
+    g_at.add(f);
+  } else if (ev.keyCode == 83) { // backward
+    let b = new Vector3();
+    b.set(g_eye);
+    b.sub(g_at);
+    b.normalize();
+    b.mul(0.5);
+    g_eye.add(b);
+    g_at.add(b);
+  } else if (ev.keyCode == 81) { // pan left
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let rotMat = new Matrix4().setRotate(10, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (ev.keyCode == 69) { // pan right
+    let f = new Vector3();
+    f.set(g_at);
+    f.sub(g_eye);
+    let rotMat = new Matrix4().setRotate(-10, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  }
+
+  renderAllShapes();
+}
+
+let locked = false;
+function click(ev) {
+  if (ev.shiftKey) {
+    if (locked) return;
+    locked = true;
+    pokeAnim = true;
+    setTimeout(() => {
+      locked = false;
+      pokeAnim = false;
+      g_leftEyeScale = 0.1;
+      g_rightEyeScale = 0.1;
+    }, 3000);
+  }
+}
+
+var g_eye = new Vector3([0, 0, 0]);
+var g_at = new Vector3([0, 0, -1]);
+var g_up = new Vector3([0, 1, 0]);
+
+var g_map = [
+  [3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3],
+  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 1],
+  [1, 0, 0, 1, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 1, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 2, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 2, 2, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 2, 2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1],
+  [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1],
+  [1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 1],
+  [1, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1],
+  [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2],
+  [3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3]
+];
+
+var walls = [];
+for (x = 0; x < 32; x++) {
+  for (y = 0; y < 32; y++) {
+    if (g_map[x][y] >= 1) {
+      for (i = 0; i < g_map[x][y]; i++) {
+        var wall = new Cube();
+        if (x == 0 || x == 31 || y == 0 || y == 31) {
+          wall.textureNum = 1;
+        }
+        wall.matrix.translate(x - 17, (-0.9 + i), y - 12);
+        walls.push(wall);
+      }
+    }
+  }
+}
+
+function drawMap() {
+  for (i = 0; i < walls.length; i++) {
+    walls[i].render();
+  }
+}
+
+var floor = new Cube();
+floor.color = [0.5, 1.0, 0.5, 1.0];
+floor.textureNum = -2;
+floor.matrix.scale(40, 0.1, 40);
+floor.matrix.translate(-0.5, -10, -0.5);
+
+var body = new Cube();
+body.color = [0.95, 0.45, 0.0, 1.0];
+body.textureNum = -2;
+body.matrix.translate(-0.25, -0.5, -0.2);
+body.matrix.rotate(0, 1, 0, 0);
+body.matrix.scale(0.5, 0.4, 0.75);
+
+var frontLeftLeg = new Cube();
+frontLeftLeg.color = [1.0, 0.55, 0.0, 1.0];
+frontLeftLeg.textureNum = -2;
+frontLeftLeg.matrix.translate(0.15, -0.8, -0.2);
+frontLeftLeg.matrix.rotate(0, 1, 0, 0);
+frontLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var frontRightLeg = new Cube();
+frontRightLeg.color = [1.0, 0.55, 0.0, 1.0];
+frontRightLeg.textureNum = -2;
+frontRightLeg.matrix.translate(-0.25, -0.8, -0.2);
+frontRightLeg.matrix.rotate(0, 1, 0, 0);
+frontRightLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var backLeftLeg = new Cube();
+backLeftLeg.color = [0.85, 0.45, 0.0, 1.0];
+backLeftLeg.textureNum = -2;
+backLeftLeg.matrix.translate(0.15, -0.8, 0.45);
+backLeftLeg.matrix.rotate(0, 1, 0, 0);
+backLeftLeg.matrix.scale(0.1, 0.3, 0.1);
+
+var backRightLeg = new Cube();
+backRightLeg.color = [0.85, 0.45, 0.0, 1.0];
+backRightLeg.textureNum = -2;
+backRightLeg.matrix.translate(-0.25, -0.8, 0.45);
+backRightLeg.matrix.rotate(0, 1, 0, 0);
+backRightLeg.matrix.scale(0.1, 0.3, 0.1);
+
+let kittens = [];
+
+function drawKitten(x, y, z) {
+  var babyCat = new Cube();
+  babyCat.color = [1.0, 0.5, 0.0, 1.0];
+  babyCat.textureNum = -2;
+  babyCat.matrix.translate(x, y, z);
+  var miniEyeCDS = new Matrix4(babyCat.matrix);
+  var miniEyeCDS2 = new Matrix4(babyCat.matrix);
+  var miniEarCDS = new Matrix4(babyCat.matrix);
+  var miniEarCDS2 = new Matrix4(babyCat.matrix);
+  var tailCDS = new Matrix4(babyCat.matrix);
+  babyCat.matrix.scale(0.25, 0.25, 0.25);
+  kittens.push(babyCat);
+
+  var leftEar = new Cube();
+  leftEar.color = [1.0, 0.5, 0.0, 1.0];
+  leftEar.textureNum = -2;
+  leftEar.matrix = miniEarCDS;
+  leftEar.matrix.translate(0.055, 0.205, 0.15);
+  leftEar.matrix.rotate(45, 0, 0, 1);
+  leftEar.matrix.scale(0.06, 0.06, 0.03);
+  kittens.push(leftEar);
+
+  var rightEar = new Cube();
+  rightEar.color = [1.0, 0.5, 0.0, 1.0];
+  rightEar.textureNum = -2;
+  rightEar.matrix = miniEarCDS2;
+  rightEar.matrix.translate(0.2, 0.205, 0.15);
+  rightEar.matrix.rotate(45, 0, 0, 1);
+  rightEar.matrix.scale(0.06, 0.06, 0.03);
+  kittens.push(rightEar);
+
+  var leftEye = new Cube();
+  leftEye.color = [0.95, 0.95, 0.95, 1.0];
+  leftEye.textureNum = -2;
+  leftEye.matrix = miniEyeCDS;
+  leftEye.matrix.translate(0.09, 0.15, 0.275);
+  leftEye.matrix.rotate(180, 0, 1, 0);
+  leftEye.matrix.scale(0.06, 0.06, 0.06);
+  kittens.push(leftEye);
+
+  var rightEye = new Cube();
+  rightEye.color = [0.95, 0.95, 0.95, 1.0];
+  rightEye.textureNum = -2;
+  rightEye.matrix = miniEyeCDS2;
+  rightEye.matrix.translate(0.225, 0.15, 0.275);
+  rightEye.matrix.rotate(180, 0, 1, 0);
+  rightEye.matrix.scale(0.06, 0.06, 0.06);
+  kittens.push(rightEye);
+
+  var tail = new Cube();
+  tail.color = [0.95, 0.5, 0.0, 1.0];
+  tail.textureNum = -2;
+  tail.matrix = tailCDS;
+  tail.matrix.rotate(-10, 1, 0, 0);
+  tail.matrix.translate(0.1, 0.15, -0.025);
+  tail.matrix.scale(0.09, 0.3, 0.09);
+  kittens.push(tail);
+}
+
+drawKitten(-0.65, -0.8, -1.5);
+// drawKitten(-0.15, -0.8, -1.25);
+drawKitten(0.35, -0.8, -1.5);
+
+function renderAllShapes() {
+  var startTime = performance.now();
+
+  var projMat = new Matrix4();
+  projMat.setPerspective(60.0, 1 * canvas.width / canvas.height, 0.1, 1000);
+  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
+
+  var viewMat = new Matrix4();
+  viewMat.setLookAt(g_eye.elements[0], g_eye.elements[1], g_eye.elements[2],
+    g_at.elements[0], g_at.elements[1], g_at.elements[2],
+    g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+  gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
+
+  var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
+  gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
+
+  // Clear <canvas>
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // drawMap();
+
+  gl.uniform3f(u_lightPos, g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+
+  var testCube = new Cube();
+  testCube.color = [0.5, 0.75, 1.0, 1.0];
+  testCube.textureNum = -2;
+  if (g_normalOn) testCube.textureNum = -3;
+  testCube.matrix.translate(2, -0.9, 0);
+
+  var testSphere = new Sphere();
+  if (g_normalOn) testSphere.textureNum = -3;
+  testSphere.matrix.translate(3, 0, 4);
+  testSphere.matrix.scale(0.75, 0.75, 0.75);
+
+  var light = new Cube();
+  light.color = [1, 1, 0, 1];
+  light.textureNum = -2;
+  // if (g_normalOn) light.textureNum = -3;
+  light.matrix.translate(g_lightPos[0], g_lightPos[1], g_lightPos[2]);
+  light.matrix.scale(0.1, 0.1, 0.1);
+  light.matrix.translate(-0.5, -0.5, -0.5);
+
+  var sky = new Cube();
+  sky.color = [0.5, 0.5, 1.0, 1.0];
+  sky.textureNum = -2;
+  if (g_normalOn) sky.textureNum = -3;
+  sky.matrix.scale(-35, -35, -45);
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+
+  testCube.render();
+  testSphere.render();
+  light.render();
+  floor.render();
+  sky.render();
+  body.render();
+
+  var head = new Cube();
+  head.color = [1.0, 0.5, 0.0, 1.0];
+  head.textureNum = -2;
+  head.matrix.translate(0.175, -0.25, -0.15);
+  head.matrix.rotate(g_headAngle, 1, 0, 0);
+  head.matrix.rotate(g_headAngle2, 0, 1, 0);
+  head.matrix.rotate(180, 0, 1, 0);
+  var eyeCoords = new Matrix4(head.matrix);
+  var eyeCoords2 = new Matrix4(head.matrix);
+  var earCoords = new Matrix4(head.matrix);
+  var earCoords2 = new Matrix4(head.matrix);
+  head.matrix.scale(0.35, 0.35, 0.35);
+  head.render();
+
+  var leftEye = new Cube();
+  leftEye.color = [0.95, 0.95, 0.95, 1.0];
+  leftEye.textureNum = -2;
+  leftEye.matrix = eyeCoords;
+  leftEye.matrix.translate(0.125, 0.175, 0.4);
+  leftEye.matrix.rotate(180, 0, 1, 0);
+  leftEye.matrix.scale(0.1, g_leftEyeScale, 0.1);
+  leftEye.render();
+
+  var rightEye = new Cube();
+  rightEye.color = [0.95, 0.95, 0.95, 1.0];
+  rightEye.textureNum = -2;
+  rightEye.matrix = eyeCoords2;
+  rightEye.matrix.translate(0.325, 0.175, 0.4);
+  rightEye.matrix.rotate(180, 0, 1, 0);
+  rightEye.matrix.scale(0.1, g_rightEyeScale, 0.1);
+  rightEye.render();
+
+  var leftEar = new Cube();
+  leftEar.color = [1.0, 0.5, 0.0, 1.0];
+  leftEar.textureNum = -2;
+  leftEar.matrix = earCoords;
+  leftEar.matrix.translate(0.075, 0.275, 0.25);
+  leftEar.matrix.rotate(45, 0, 0, 1);
+  leftEar.matrix.scale(0.1, 0.1, 0.05);
+  leftEar.render();
+
+  var rightEar = new Cube();
+  rightEar.color = [1.0, 0.5, 0.0, 1.0];
+  rightEar.textureNum = -2;
+  rightEar.matrix = earCoords2;
+  rightEar.matrix.translate(0.275, 0.275, 0.25);
+  rightEar.matrix.rotate(45, 0, 0, 1);
+  rightEar.matrix.scale(0.1, 0.1, 0.05);
+  rightEar.render();
+
+  frontLeftLeg.render();
+  frontRightLeg.render();
+  backLeftLeg.render();
+  backRightLeg.render();
+
+  var tailBegin = new Cube();
+  tailBegin.color = [0.9, 0.5, 0.1, 1.0];
+  tailBegin.textureNum = -2;
+  tailBegin.matrix.setTranslate(0, -0.45, 0);
+  tailBegin.matrix.rotate(5, 1, 0, 0);
+  tailBegin.matrix.rotate(-g_tailAngle, 0, 0, 1);
+  var tailMidCoords = new Matrix4(tailBegin.matrix);
+  tailBegin.matrix.translate(-0.075, 0.35, 0.4);
+  tailBegin.matrix.scale(0.15, 0.25, 0.15);
+  tailBegin.render();
+
+  var tailMid = new Cube();
+  tailMid.color = [0.9, 0.5, 0.1, 1.0];
+  tailMid.textureNum = -2;
+  tailMid.matrix = tailMidCoords;
+  tailMid.matrix.translate(-0.07, 0.50, 0.405);
+  tailMid.matrix.rotate(-g_tailMidAngle, 1, 0, 0);
+  var tailEndCoords = new Matrix4(tailMid.matrix);
+  tailMid.matrix.scale(0.14, 0.3, 0.14);
+  tailMid.matrix.translate(0, 0.15, 0);
+  tailMid.render();
+
+  var tailEnd = new Cube();
+  tailEnd.color = [0.9, 0.5, 0.1, 1.0];
+  tailEnd.textureNum = -2;
+  tailEnd.matrix = tailEndCoords;
+  tailEnd.matrix.translate(0.005, 0.3, 0);
+  tailEnd.matrix.rotate(-g_tailEndAngle, 1, 0, 0);
+  tailEnd.matrix.scale(0.13, 0.29, 0.13);
+  tailEnd.render();
+
+  for (i = 0; i < kittens.length; i++) {
+    kittens[i].render()
+  }
+
+  var duration = performance.now() - startTime;
+  sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000 / duration) / 10, "numdot");
+}
+
+function sendTextToHTML(text, htmlID) {
+  var htmlElem = document.getElementById(htmlID);
+  if (!htmlElem) {
+    console.log("failed to get " + htmlID + " from HTML");
+    return;
+  }
+  htmlElem.innerHTML = text;
+}
+
+function convertCoordsToGL(ev) {
+  var x = mouseX; // x coordinate of a mouse pointer
+  var y = mouseY; // y coordinate of a mouse pointer
+  var rect = ev.target.getBoundingClientRect();
+
+  x = ((x - rect.left) - canvas.width / 2) / (canvas.width / 2);
+  y = (canvas.height / 2 - (y - rect.top)) / (canvas.height / 2);
+  let f = new Vector3();
+  f.set(g_at);
+  f.sub(g_eye);
+  if (x > 0.8) {
+    let rotMat = new Matrix4().setRotate(-8, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.7) {
+    let rotMat = new Matrix4().setRotate(-4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.5) {
+    let rotMat = new Matrix4().setRotate(-2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > 0.3) {
+    let rotMat = new Matrix4().setRotate(-1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.3) {
+    let rotMat = new Matrix4().setRotate(0, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.5) {
+    let rotMat = new Matrix4().setRotate(1, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.7) {
+    let rotMat = new Matrix4().setRotate(2, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -0.8) {
+    let rotMat = new Matrix4().setRotate(4, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  } else if (x > -1) {
+    let rotMat = new Matrix4().setRotate(8, g_up.elements[0], g_up.elements[1], g_up.elements[2]);
+    let f_prime = rotMat.multiplyVector3(f);
+    f_prime.add(g_eye);
+    g_at.set(f_prime);
+  }
+
+  return ([x, y]);
+}

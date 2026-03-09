@@ -9,3 +9,5 @@ asgn2: https://luminear.github.io/CSE-160/asgn2/asgn2.html
 asgn3: https://luminear.github.io/CSE-160/asgn3/asgn3.html
 
 asgn4: https://luminear.github.io/CSE-160/asgn4/asgn4.html
+
+asgn5: https://luminear.github.io/CSE-160/asgn5/asgn5.html

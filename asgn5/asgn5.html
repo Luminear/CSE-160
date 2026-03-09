@@ -36,27 +36,41 @@
 
 <script type="module">
     import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
 
     function main() {
 
         const canvas = document.querySelector('#c');
-        const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            canvas,
+            logarithmicDepthBuffer: true,
+        });
 
-        const fov = 75;
+        const fov = 45;
         const aspect = 2; // the canvas default
         const near = 0.1;
-        const far = 5;
+        const far = 100;
         const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-        camera.position.z = 2;
+        camera.position.set(0, 0, 10);
+
+        const controls = new OrbitControls(camera, canvas);
+        controls.target.set(0, 0, 0);
+        controls.update();
 
         const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#DEFEFF');
 
         {
             const color = 0xFFFFFF;
             const intensity = 3;
             const light = new THREE.DirectionalLight(color, intensity);
-            light.position.set(- 1, 2, 4);
+            light.position.set(0, 2, 3);
+            // light.target.position.set(- 5, 0, 0);
             scene.add(light);
+            // scene.add(light.target);
         }
 
         const boxWidth = 1;
@@ -89,10 +103,25 @@
         }
 
         const cubes = [
-            makeInstance(geometry, 0x44aa88, 0, 1),
-            makeInstance(geometry, 0x8844aa, - 2, 0),
-            makeInstance(geometry, 0xaa8844, 2, 0),
+            makeInstance(geometry, 0x44aa88, -6, 1),
+            makeInstance(geometry, 0x8080ff, -4, 0),
+            // makeInstance(geometry, 0xaa8844, 2, 0),
         ];
+
+        // VR-Mobil by Vladimir Ilic [CC-BY] 
+        // (https://creativecommons.org/licenses/by/3.0/) 
+        // via Poly Pizza (https://poly.pizza/m/6XXj6DSBb08)
+        {
+            const mtlLoader = new MTLLoader();
+            mtlLoader.load('VR-Mobil/materials.mtl', (mtl) => {
+                mtl.preload();
+                const objLoader = new OBJLoader();
+                objLoader.setMaterials(mtl);
+                objLoader.load('VR-Mobil/model.obj', (root) => {
+                    scene.add(root);
+                });
+            });
+        }
 
         function resizeRendererToDisplaySize(renderer) {
 
@@ -101,9 +130,7 @@
             const height = canvas.clientHeight;
             const needResize = canvas.width !== width || canvas.height !== height;
             if (needResize) {
-
                 renderer.setSize(width, height, false);
-
             }
 
             return needResize;
@@ -115,16 +142,14 @@
             time *= 0.001;
 
             if (resizeRendererToDisplaySize(renderer)) {
-
                 const canvas = renderer.domElement;
                 camera.aspect = canvas.clientWidth / canvas.clientHeight;
                 camera.updateProjectionMatrix();
-
             }
 
-            cubes.forEach((cube, ndx) => {
+            cubes.forEach((cube, index) => {
 
-                const speed = .2 + ndx * .1;
+                const speed = .2 + index * .1;
                 const rot = time * speed;
                 cube.rotation.x = rot;
                 cube.rotation.y = rot;

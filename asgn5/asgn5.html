@@ -52,7 +52,7 @@
         const fov = 45;
         const aspect = 2; // the canvas default
         const near = 0.1;
-        const far = 100;
+        const far = 500;
         const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
         camera.position.set(0, 0, 10);
 
@@ -61,7 +61,7 @@
         controls.update();
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#000000');
+        scene.background = new THREE.Color('#DEFEFF');
 
         {
             const color = 0xFFFFF4;
@@ -154,6 +154,18 @@
                     scene.add(root);
                 });
             });
+        }
+
+        {
+            const loader = new THREE.TextureLoader();
+            const texture = loader.load(
+                'citrus_orchard_puresky.jpg',
+                () => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    scene.background = texture;
+
+                });
         }
 
         function resizeRendererToDisplaySize(renderer) {

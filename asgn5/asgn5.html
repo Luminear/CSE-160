@@ -61,16 +61,47 @@
         controls.update();
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#DEFEFF');
+        scene.background = new THREE.Color('#000000');
 
         {
-            const color = 0xFFFFFF;
-            const intensity = 3;
-            const light = new THREE.DirectionalLight(color, intensity);
-            light.position.set(0, 2, 3);
-            // light.target.position.set(- 5, 0, 0);
+            const color = 0xFFFFF4;
+            const intensity = 1.75;
+            const dLight = new THREE.DirectionalLight(color, intensity);
+            dLight.position.set(2, 2, 3);
+            // dLight.target.position.set(-5, 0, 0);
+            scene.add(dLight);
+            // scene.add(dLight.target);
+        }
+
+        {
+            const color = 0xFFFFE9;
+            const intensity = 0.20;
+            const ambLight = new THREE.AmbientLight(color, intensity);
+            scene.add(ambLight);
+        }
+
+        {
+            const color = 0xFF8080;
+            const intensity = 20;
+            const distance = 1;
+            const light = new THREE.PointLight(color, intensity, distance);
+            light.position.set(1.75, 0, 0);
             scene.add(light);
-            // scene.add(light.target);
+        }
+
+        {
+            const color = 0xFFF8F1;
+            const intensity = 50;
+            const distance = 5;
+            const angle = 35;
+            const penumbra = 1;
+            const light = new THREE.SpotLight(color, intensity, distance, angle,
+                penumbra
+            );
+            light.position.set(-1.95, 1.5, 0);
+            light.target.position.set(-5, 1, 0);
+            scene.add(light);
+            scene.add(light.target);
         }
 
         const boxWidth = 1;
@@ -82,7 +113,7 @@
         const texture = loader.load('stone.png');
         texture.colorSpace = THREE.SRGBColorSpace;
 
-        function makeInstance(geometry, color, x, textureNum) {
+        function makeInstance(geometry, color, textureNum, x, y, z) {
 
             let material;
             if (textureNum == 0) {
@@ -97,14 +128,16 @@
             scene.add(cube);
 
             cube.position.x = x;
+            cube.position.y = y;
+            cube.position.z = z;
 
             return cube;
 
         }
 
         const cubes = [
-            makeInstance(geometry, 0x44aa88, -6, 1),
-            makeInstance(geometry, 0x8080ff, -4, 0),
+            makeInstance(geometry, 0x44aa88, 1, -4, 1.75, 0),
+            makeInstance(geometry, 0x8080ff, 0, -4, 0, 0),
             // makeInstance(geometry, 0xaa8844, 2, 0),
         ];
 

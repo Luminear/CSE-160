@@ -54,7 +54,7 @@
         const near = 0.1;
         const far = 500;
         const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-        camera.position.set(0, 0, 10);
+        camera.position.set(0, 0, 20);
 
         const controls = new OrbitControls(camera, canvas);
         controls.target.set(0, 0, 0);
@@ -65,19 +65,21 @@
 
         {
             const color = 0xFFFFF4;
-            const intensity = 1.75;
-            const dLight = new THREE.DirectionalLight(color, intensity);
-            dLight.position.set(2, 2, 3);
-            // dLight.target.position.set(-5, 0, 0);
-            scene.add(dLight);
-            // scene.add(dLight.target);
+            const intensity = 1;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(-1, 2.5, 0);
+            light.target.position.set(-10, 0, 0);
+            scene.add(light);
+            scene.add(light.target);
+            // const helper = new THREE.DirectionalLightHelper(light);
+            // scene.add(helper);
         }
 
         {
             const color = 0xFFFFE9;
-            const intensity = 0.20;
-            const ambLight = new THREE.AmbientLight(color, intensity);
-            scene.add(ambLight);
+            const intensity = 0.12;
+            const light = new THREE.AmbientLight(color, intensity);
+            scene.add(light);
         }
 
         {
@@ -91,17 +93,286 @@
 
         {
             const color = 0xFFF8F1;
-            const intensity = 50;
-            const distance = 5;
+            const intensity = 70;
+            const distance = 20;
             const angle = 35;
-            const penumbra = 1;
+            const penumbra = 0.15;
             const light = new THREE.SpotLight(color, intensity, distance, angle,
                 penumbra
             );
             light.position.set(-1.95, 1.5, 0);
-            light.target.position.set(-5, 1, 0);
+            light.target.position.set(-20, -2.5, 0);
             scene.add(light);
             scene.add(light.target);
+            // const helper = new THREE.SpotLightHelper(light);
+            // scene.add(helper);
+        }
+
+        {
+            const geometry = new THREE.BoxGeometry(75, 0.25, 10);
+            const color = 0x0E0E1B;
+            const material = new THREE.MeshPhongMaterial({ color });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(0, -1.65, 0);
+            scene.add(cube);
+        }
+
+        {
+            const geometry = new THREE.BoxGeometry(75, 0.5, 5);
+            const color = 0x5C5C5C;
+            const material = new THREE.MeshPhongMaterial({ color });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(0, -1.65, 7.5);
+            scene.add(cube);
+        }
+
+        {
+            const geometry = new THREE.BoxGeometry(75, 0.5, 5);
+            const color = 0x5C5C5C;
+            const material = new THREE.MeshPhongMaterial({ color });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(0, -1.65, -7.5);
+            scene.add(cube);
+        }
+
+        {
+            {
+                const radiusTop = 0.25;
+                const radiusBottom = 0.25;
+                const height = 8;
+                const radialSegments = 12;
+                const geometry = new THREE.CylinderGeometry(
+                    radiusTop, radiusBottom, height, radialSegments);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cylinder = new THREE.Mesh(geometry, material);
+                cylinder.position.set(3.5, 2.5, -7.5);
+                scene.add(cylinder);
+            }
+
+            {
+                const radius = 0.2;
+                const widthSegments = 16;
+                const heightSegments = 12;
+                const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+                const color = 0xFFFF80;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(3.5, 6.5, -6.5);
+                scene.add(sphere);
+            }
+
+            {
+                const geometry = new THREE.BoxGeometry(1, 0.5, 2);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(3.5, 6.75, -7);
+                scene.add(cube);
+            }
+
+            {
+                const color = 0xFFFFCA;
+                const intensity = 20;
+                const distance = 20;
+                const light = new THREE.PointLight(color, intensity, distance);
+                light.position.set(3.5, 6, -6.5);
+                scene.add(light);
+                // const helper = new THREE.PointLightHelper(light);
+                // scene.add(helper);
+            }
+        }
+
+        {
+            {
+                const radiusTop = 0.25;
+                const radiusBottom = 0.25;
+                const height = 8;
+                const radialSegments = 12;
+                const geometry = new THREE.CylinderGeometry(
+                    radiusTop, radiusBottom, height, radialSegments);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cylinder = new THREE.Mesh(geometry, material);
+                cylinder.position.set(-28, 2.5, -7.5);
+                scene.add(cylinder);
+            }
+
+            {
+                const radius = 0.2;
+                const widthSegments = 16;
+                const heightSegments = 12;
+                const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+                const color = 0xFFFF80;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(-28, 6.5, -6.5);
+                scene.add(sphere);
+            }
+
+            {
+                const geometry = new THREE.BoxGeometry(1, 0.5, 2);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(-28, 6.75, -7);
+                scene.add(cube);
+            }
+
+            {
+                const color = 0xFFFFCA;
+                const intensity = 20;
+                const distance = 20;
+                const light = new THREE.PointLight(color, intensity, distance);
+                light.position.set(-28, 6, -6.5);
+                scene.add(light);
+                // const helper = new THREE.PointLightHelper(light);
+                // scene.add(helper);
+            }
+        }
+
+        {
+            {
+                const radiusTop = 0.25;
+                const radiusBottom = 0.25;
+                const height = 8;
+                const radialSegments = 12;
+                const geometry = new THREE.CylinderGeometry(
+                    radiusTop, radiusBottom, height, radialSegments);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cylinder = new THREE.Mesh(geometry, material);
+                cylinder.position.set(35, 2.5, -7.5);
+                scene.add(cylinder);
+            }
+
+            {
+                const radius = 0.2;
+                const widthSegments = 16;
+                const heightSegments = 12;
+                const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+                const color = 0xFFFF80;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(35, 6.5, -6.5);
+                scene.add(sphere);
+            }
+
+            {
+                const geometry = new THREE.BoxGeometry(1, 0.5, 2);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(35, 6.75, -7);
+                scene.add(cube);
+            }
+
+            {
+                const color = 0xFFFFCA;
+                const intensity = 20;
+                const distance = 20;
+                const light = new THREE.PointLight(color, intensity, distance);
+                light.position.set(35, 6, -6.5);
+                scene.add(light);
+                // const helper = new THREE.PointLightHelper(light);
+                // scene.add(helper);
+            }
+        }
+
+        {
+            {
+                const radiusTop = 0.25;
+                const radiusBottom = 0.25;
+                const height = 8;
+                const radialSegments = 12;
+                const geometry = new THREE.CylinderGeometry(
+                    radiusTop, radiusBottom, height, radialSegments);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cylinder = new THREE.Mesh(geometry, material);
+                cylinder.position.set(19.25, 2.5, 7.5);
+                scene.add(cylinder);
+            }
+
+            {
+                const radius = 0.2;
+                const widthSegments = 16;
+                const heightSegments = 12;
+                const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+                const color = 0xFFFF80;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(19.25, 6.5, 6.5);
+                scene.add(sphere);
+            }
+
+            {
+                const geometry = new THREE.BoxGeometry(1, 0.5, 2);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(19.25, 6.75, 7);
+                scene.add(cube);
+            }
+
+            {
+                const color = 0xFFFFCA;
+                const intensity = 20;
+                const distance = 20;
+                const light = new THREE.PointLight(color, intensity, distance);
+                light.position.set(19.25, 6, 6.5);
+                scene.add(light);
+                // const helper = new THREE.PointLightHelper(light);
+                // scene.add(helper);
+            }
+        }
+
+        {
+            {
+                const radiusTop = 0.25;
+                const radiusBottom = 0.25;
+                const height = 8;
+                const radialSegments = 12;
+                const geometry = new THREE.CylinderGeometry(
+                    radiusTop, radiusBottom, height, radialSegments);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cylinder = new THREE.Mesh(geometry, material);
+                cylinder.position.set(-12.25, 2.5, 7.5);
+                scene.add(cylinder);
+            }
+
+            {
+                const radius = 0.2;
+                const widthSegments = 16;
+                const heightSegments = 12;
+                const geometry = new THREE.SphereGeometry(radius, widthSegments, heightSegments);
+                const color = 0xFFFF80;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(-12.25, 6.5, 6.5);
+                scene.add(sphere);
+            }
+
+            {
+                const geometry = new THREE.BoxGeometry(1, 0.5, 2);
+                const color = 0x5C5C5C;
+                const material = new THREE.MeshPhongMaterial({ color });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(-12.25, 6.75, 7);
+                scene.add(cube);
+            }
+
+            {
+                const color = 0xFFFFCA;
+                const intensity = 20;
+                const distance = 20;
+                const light = new THREE.PointLight(color, intensity, distance);
+                light.position.set(-12.25, 6, 6.5);
+                scene.add(light);
+                // const helper = new THREE.PointLightHelper(light);
+                // scene.add(helper);
+            }
         }
 
         const boxWidth = 1;
@@ -136,8 +407,8 @@
         }
 
         const cubes = [
-            makeInstance(geometry, 0x44aa88, 1, -4, 1.75, 0),
-            makeInstance(geometry, 0x8080ff, 0, -4, 0, 0),
+            makeInstance(geometry, 0x44aa88, 1, -4, 0, -6),
+            makeInstance(geometry, 0x8080ff, 1, -4, 0, 6),
             // makeInstance(geometry, 0xaa8844, 2, 0),
         ];
 
